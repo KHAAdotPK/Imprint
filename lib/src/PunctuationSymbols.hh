@@ -1,6 +1,10 @@
 /* 
     lib/src/PunctuationSymbols.hh 
-    Q@hackers.pk
+    
+    This file contains the list of punctuation symbols that are used by the 
+    Cleaner class to perform cleaning operations.
+
+    Maintainer: Sohail
  */
 
 #ifndef IMPRINT_SRC_PUNCTUATION_SYMBOLS_HH
@@ -24,10 +28,11 @@ constexpr char32_t PLUS_SIGN            = U'\u002B'; // +
 constexpr char32_t COMMA                = U'\u002C'; // ,
 constexpr char32_t HYPHEN_MINUS         = U'\u002D'; // -
 constexpr char32_t FULL_STOP            = U'\u002E'; // .
+//constexpr char32_t RADIX                = U''
 constexpr char32_t SOLIDUS              = U'\u002F'; // /
 constexpr char32_t COLON                = U'\u003A'; // :
 constexpr char32_t SEMICOLON            = U'\u003B'; // ;
-constexpr char32_t LESS_THAN_SIGN       = U'\u003C'; // 
+constexpr char32_t LESS_THAN_SIGN       = U'\u003C'; // <
 constexpr char32_t EQUALS_SIGN          = U'\u003D'; // =
 constexpr char32_t GREATER_THAN_SIGN    = U'\u003E'; // >
 constexpr char32_t QUESTION_MARK        = U'\u003F'; // ?

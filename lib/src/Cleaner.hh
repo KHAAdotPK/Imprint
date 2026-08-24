@@ -1,6 +1,10 @@
 /*
     lib/src/Cleaner.hh
-    Q@hackers.pk
+    
+    It decodes UTF‑8 sequences, checks each codepoint against a list of
+    punctuation symbols, and keeps only non‑punctuation codepoints.
+
+    Maintainer: Sohail
  */
 
 #ifndef IMPRINT_LIB_SRC_CLEANER_HH
@@ -37,7 +41,10 @@ class Cleaner
         {
             std::string cleaned; // Result buffer
             cleaned.reserve(line.size()); // Pre-allocate to avoid reallocations
-
+            
+            bool is_preceeded_by_numeric_character = false;    // True if the previous character was a digit.
+            bool is_preceeded_by_alphabetic_character = false; // True if the previous character was an alphabet.
+        
             size_t i = 0; // Index into the input line
             while (i < line.size())
             {
@@ -81,15 +88,16 @@ class Cleaner
                 // Check that we have enough bytes left in the string
                 if (i + seqLen > line.size())
                 {
-                    // Not enough bytes: treat as invalid, skip the leading byte
+                    // Not enough bytes: treat as invalid, skip the leading byte. The seqlen will be reassigned                    
                     ++i;
                     continue;
                 }
-
-                // Accumulate continuation bytes with validation, that is why we start from k = 1
+                
+                // Accumulate continuation bytes with validation, that is why we start from k = 1 
+                // The codepoint already has lower 3 to 5 bits of the leading byte which is at at k = 0
                 for (size_t k = 1; k < seqLen; ++k)
                 {
-                    unsigned char cont = static_cast<unsigned char>(line[i + k]);
+                    unsigned char cont = static_cast<unsigned char>(line[i + k]); // Continution byte, extract least significant 6 bits 
                     
                     /*
                         Continuation byte MUST start with bits 10xxxxxx
@@ -134,9 +142,23 @@ class Cleaner
                 for (size_t p = 0; p < EnglishPunctuation::NUM_PUNCTUATION_SYMBOLS; ++p)
                 {
                     if (codepoint == EnglishPunctuation::ALL_PUNCTUATION[p])
-                    {
+                    {                    
                         isPunct = true;
                         break;
+                    }
+                    else
+                    {
+                        // See if it is Numeric character
+                        if (codepoint >= U'0' && codepoint <= U'9')
+                        {
+                            is_preceeded_by_numeric_character = true;
+                            is_preceeded_by_alphabetic_character = false;
+                        }
+                        else if ((codepoint >= U'A' && codepoint <= U'Z') || (codepoint >= U'a' && codepoint <= U'z')) 
+                        {                               
+                            is_preceeded_by_alphabetic_character = true;
+                            is_preceeded_by_numeric_character = false;
+                        }
                     }
                 }
                 
@@ -144,7 +166,54 @@ class Cleaner
                 // This appends the exact sequence of bytes from the input (no re‑encoding).
                 if (!isPunct)
                 {
-                    cleaned.append(line, i, seqLen);
+                    cleaned.append(line, i, seqLen);                                        
+                }
+                else // What kind of replacement should we do for punctuation ?
+                {
+                    // When it is EM_DASH we should replace it with space.
+                    // This EM_DASH should be preeceded by a character and followed by a character.
+                    // If this condition is met, we should replace EM_DASH with space.
+                    // Otherwise, we should replace EM_DASH with empty string.
+                    if (codepoint == EnglishPunctuation::EM_DASH)
+                    {
+                        if (is_preceeded_by_alphabetic_character)
+                        {
+                            is_preceeded_by_alphabetic_character = false;
+                            cleaned.append(" ", 1);                            
+                        }                                                
+                    }
+                    else if (codepoint == EnglishPunctuation::EN_DASH)
+                    {
+                        if (is_preceeded_by_alphabetic_character)
+                        {
+                            is_preceeded_by_alphabetic_character = false;
+                            cleaned.append(" ", 1);                            
+                        }                                  
+                    }
+                    else if (codepoint == EnglishPunctuation::HYPHEN_MINUS)
+                    {
+                        if (is_preceeded_by_alphabetic_character)
+                        {
+                            is_preceeded_by_alphabetic_character = false;
+                            cleaned.append(" ", 1);                            
+                        }                                  
+                    }
+                    else if (codepoint == EnglishPunctuation::FULL_STOP)
+                    {
+                        if (is_preceeded_by_numeric_character)
+                        {
+                            is_preceeded_by_numeric_character = false;
+                            cleaned.append(line, i, seqLen); 
+                        }                                  
+                    }
+                    else if (codepoint == EnglishPunctuation::PERCENT_SIGN)
+                    {
+                        if (is_preceeded_by_numeric_character)
+                        {
+                            is_preceeded_by_numeric_character = false;
+                            cleaned.append(line, i, seqLen); 
+                        }
+                    }
                 }
 
                 i += seqLen; // Move to the next UTF‑8 sequence
