@@ -118,6 +118,149 @@ constexpr char32_t ALL_PUNCTUATION[] = {
 
 constexpr size_t NUM_PUNCTUATION_SYMBOLS = sizeof(ALL_PUNCTUATION) / sizeof(ALL_PUNCTUATION[0]);
 
+    // Check if a codepoint is punctuation
+    bool isPunctuation(char32_t codepoint)
+    {
+        for (size_t i = 0; i < NUM_PUNCTUATION_SYMBOLS; ++i)
+        {
+            if (codepoint == ALL_PUNCTUATION[i])
+                return true;
+        }
+        return false;
+    }
+
 } // namespace EnglishPunctuation
+
+namespace NoiseAndCorruption
+{
+    // =================================================================
+    // Characters to REMOVE/STRIP entirely before tokenization.
+    // DO NOT add these to your EnglishPunctuation list.
+    // =================================================================
+
+    constexpr char32_t CORRUPTION_AND_NOISE[] = {
+
+        // ------------- 1. Box-drawing & Block chars -------------
+        // These NEVER appear in clean UTF-8 English text.
+        // They are the #1 sign of reading UTF-8 bytes as Windows-1252 / Latin-1.
+        U'\u2591', // ░
+        U'\u2592', // ▒
+        U'\u2593', // ▓
+        U'\u2502', // │
+        U'\u2562', // ╢
+        U'\u2556', // ╖
+        U'\u2555', // ╕
+        U'\u2563', // ╣
+        U'\u2551', // ║
+        U'\u2557', // ╗
+        U'\u255D', // ╝
+        U'\u255C', // ╜
+        U'\u2510', // ┐
+        U'\u252C', // ┬
+        U'\u251C', // ├
+        U'\u2500', // ─
+        U'\u253C', // ┼
+        U'\u2560', // ╠
+        U'\u256C', // ╬
+        U'\u256A', // ╪
+        U'\u2567', // ╧
+        U'\u2553', // ╓
+        U'\u256B', // ╫
+        U'\u2580', // ▀
+        U'\u2554', // ╔
+        U'\u2559', // ╚
+        U'\u2564', // ╦
+        U'\u2569', // ╩
+
+        // ------------- 2. Mojibake Latin-1 supplements -------------
+        // In pure English NLP, these often appear when UTF-8 2-byte sequences
+        // are misinterpreted. If you later support French/Spanish/German,
+        // you may KEEP é, ü, ß, ñ, etc. But for your specific corrupted output,
+        // they are garbage. I list them here; comment out the ones you wish to keep.
+        U'\u00C7', // Ç
+        U'\u00FC', // ü
+        U'\u00E9', // é
+        U'\u00E2', // â
+        U'\u00E4', // ä
+        U'\u00E7', // ç
+        U'\u00EC', // ì
+        U'\u00C4', // Ä
+        U'\u00C9', // É
+        U'\u00FB', // û
+        U'\u00FF', // ÿ
+        U'\u00D6', // Ö
+        U'\u00ED', // í
+        U'\u00F3', // ó
+        U'\u00FA', // ú
+        U'\u00F1', // ñ
+        U'\u00D1', // Ñ
+        U'\u00DF', // ß (German lowercase sharp S)
+        U'\u1E9E', // ẞ (German uppercase sharp S)
+
+        // ------------- 3. Fractions, Ordinals, and Rare Currency -------------
+        U'\u00A3', // £ (remove unless you process finance)
+        U'\u00A5', // ¥
+        U'\u00BD', // ½
+        U'\u00BC', // ¼
+        U'\u00AA', // ª
+        U'\u00BA', // º
+        U'\u00A1', // ¡
+        
+        // ------------- 4. Greek / Mathematical symbols -------------
+        U'\u0393', // Γ
+        U'\u03A6', // Φ
+        U'\u03B1', // α
+        U'\u2229', // ∩
+
+        // ------------- 5. Obscure control/symbols -------------
+        U'\u2310', // ⌐
+        U'\u00AC', // ¬
+
+        // ------------- 6. ASCII control characters (U+0000–U+001F, except maybe \t, \n, \r which should be handle separately).-------------
+        U'\u0000', // NUL
+        U'\u0001', // SOH
+        U'\u0002', // STX
+        U'\u0003', // ETX
+        U'\u0004', // EOT
+        U'\u0005', // ENQ
+        U'\u0006', // ACK
+        U'\u0007', // BEL
+        U'\u0008', // BS
+        U'\u000B', // VT
+        U'\u000C', // FF
+        U'\u000E', // SO
+        U'\u000F', // SI
+        U'\u0010', // DLE
+        U'\u0011', // DC1
+        U'\u0012', // DC2
+        U'\u0013', // DC3
+        U'\u0014', // DC4
+        U'\u0015', // NAK
+        U'\u0016', // SYN
+        U'\u0017', // ETB
+        U'\u0018', // CAN
+        U'\u0019', // EM
+        U'\u001A', // SUB (Substitute character)
+        U'\u001B', // ESC
+        U'\u001C', // FS
+        U'\u001D', // GS
+        U'\u001E', // RS
+        U'\u001F', // US 
+    };
+
+    constexpr size_t NUM_NOISE_SYMBOLS = sizeof(CORRUPTION_AND_NOISE) / sizeof(CORRUPTION_AND_NOISE[0]);
+
+    // Check if a codepoint is noise
+    bool isNoise(char32_t codepoint)
+    {
+        for (size_t i = 0; i < NUM_NOISE_SYMBOLS; ++i)
+        {
+            if (codepoint == CORRUPTION_AND_NOISE[i])
+                return true;
+        }
+        return false;
+    }
+
+} // namespace NoiseAndCorruption
 
 #endif // IMPRINT_SRC_PUNCTUATION_SYMBOLS_HH

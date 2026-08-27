@@ -134,37 +134,45 @@ class Cleaner
                     ++i;
                     continue;
                 }
-                
+
+                // Let's first check for corruption & noise.
+                if (NoiseAndCorruption::isNoise(codepoint))
+                {
+                    // Skip this codepoint
+                    i += seqLen;
+                    continue;
+                }
+
                 // Check the decoded codepoint against the list of all punctuation symbols.
                 // EnglishPunctuation must be a namespace/class with a static array ALL_PUNCTUATION
                 // and a constant NUM_PUNCTUATION_SYMBOLS. This dependency is not shown here.
-                bool isPunct = false;
-                for (size_t p = 0; p < EnglishPunctuation::NUM_PUNCTUATION_SYMBOLS; ++p)
+                const bool isPunct = EnglishPunctuation::isPunctuation(codepoint);
+
+                // Update the preceding-character state once per codepoint, not once
+                // for every entry in the punctuation table.
+                const bool isAsciiLetter =
+                    (codepoint >= U'A' && codepoint <= U'Z') ||
+                    (codepoint >= U'a' && codepoint <= U'z');
+                const bool isAsciiDigit = codepoint >= U'0' && codepoint <= U'9';
+                const bool isSpace = codepoint == U' ';
+
+                if (!isPunct && (isAsciiLetter || isAsciiDigit || isSpace))
                 {
-                    if (codepoint == EnglishPunctuation::ALL_PUNCTUATION[p])
-                    {                    
-                        isPunct = true;
-                        break;
-                    }
-                    else
+                    if (codepoint >= U'0' && codepoint <= U'9')
                     {
-                        // See if it is Numeric character
-                        if (codepoint >= U'0' && codepoint <= U'9')
-                        {
-                            is_preceeded_by_numeric_character = true;
-                            is_preceeded_by_alphabetic_character = false;
-                        }
-                        else if ((codepoint >= U'A' && codepoint <= U'Z') || (codepoint >= U'a' && codepoint <= U'z')) 
-                        {                               
-                            is_preceeded_by_alphabetic_character = true;
-                            is_preceeded_by_numeric_character = false;
-                        }
+                        is_preceeded_by_numeric_character = true;
+                        is_preceeded_by_alphabetic_character = false;
+                    }
+                    else if ((codepoint >= U'A' && codepoint <= U'Z') || (codepoint >= U'a' && codepoint <= U'z'))
+                    {
+                        is_preceeded_by_alphabetic_character = true;
+                        is_preceeded_by_numeric_character = false;
                     }
                 }
                 
                 // Keep the original bytes only if the codepoint is NOT punctuation.
                 // This appends the exact sequence of bytes from the input (no re‑encoding).
-                if (!isPunct)
+                if (!isPunct && (isAsciiLetter || isAsciiDigit || isSpace))
                 {
                     cleaned.append(line, i, seqLen);                                        
                 }
@@ -218,7 +226,7 @@ class Cleaner
 
                 i += seqLen; // Move to the next UTF‑8 sequence
             }
-
+            
             return cleaned;
         }
 };
