@@ -150,9 +150,7 @@ class Cleaner
 
                 // Update the preceding-character state once per codepoint, not once
                 // for every entry in the punctuation table.
-                const bool isAsciiLetter =
-                    (codepoint >= U'A' && codepoint <= U'Z') ||
-                    (codepoint >= U'a' && codepoint <= U'z');
+                const bool isAsciiLetter =(codepoint >= U'A' && codepoint <= U'Z') || (codepoint >= U'a' && codepoint <= U'z');
                 const bool isAsciiDigit = codepoint >= U'0' && codepoint <= U'9';
                 const bool isSpace = codepoint == U' ';
 
@@ -170,6 +168,16 @@ class Cleaner
                     }
                 }
                 
+                /*
+                    The `isNoise` block is working correctly and skipping the precomposed noise characters it knows about. 
+                    However, the `(isAsciiLetter || isAsciiDigit || isSpace)` condition acts as the "whitelist safety net"
+                    to ensure that anything else (unlisted symbols, foreign characters, or decomposed marks) is automatically 
+                    filtered out. 
+                    
+                    Comment out `&& (isAsciiLetter || isAsciiDigit || isSpace)` to allow all of those characters to slip 
+                    through and join the vocabulary. 
+                 */
+
                 // Keep the original bytes only if the codepoint is NOT punctuation.
                 // This appends the exact sequence of bytes from the input (no re‑encoding).
                 if (!isPunct && (isAsciiLetter || isAsciiDigit || isSpace))
